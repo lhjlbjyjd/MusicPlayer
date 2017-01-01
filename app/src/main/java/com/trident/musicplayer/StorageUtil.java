@@ -49,6 +49,18 @@ public class StorageUtil {
         editor.apply();
     }
 
+    public void storeProgress(int progress){
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt("progress", progress);
+        editor.apply();
+    }
+
+    public int loadProgress(){
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+        return preferences.getInt("progress", 0);
+    }
+
     public int loadAudioIndex() {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         return preferences.getInt("audioIndex", -1);//return -1 if no data found

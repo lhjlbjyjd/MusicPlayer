@@ -16,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -45,12 +46,6 @@ public class MainActivity extends AppCompatActivity {
 
         tabLayout = (TabLayout) findViewById(R.id.tablayout);
         tabLayout.setupWithViewPager(viewPager);
-
-        if(serviceBound){
-            Intent playerIntent = new Intent(getApplicationContext(), MediaPlayerService.class);
-            startService(playerIntent);
-            bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-        }
     }
 
     public void setupViewPager(ViewPager viewPager){
@@ -86,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
             StorageUtil storage = new StorageUtil(getApplicationContext());
             //storage.storeAudio(((ApplicationClass) getApplication()).songs);
             storage.storeAudioIndex(audioIndex);
-
             Intent playerIntent = new Intent(getApplicationContext(), MediaPlayerService.class);
             startService(playerIntent);
             bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -94,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             //Store the new audioIndex to SharedPreferences
             StorageUtil storage = new StorageUtil(getApplicationContext());
             storage.storeAudioIndex(audioIndex);
-
+            Log.d("audioIndex : ", String.valueOf((new StorageUtil(getApplicationContext()).loadAudioIndex())));
             //Service is active
             //Send a broadcast to the service -> PLAY_NEW_AUDIO
             Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
@@ -115,8 +109,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStart() {
+        super.onStart();
+        //Store Serializable audioList to SharedPreferences
+        StorageUtil storage = new StorageUtil(getApplicationContext());
+        //storage.storeAudio(((ApplicationClass) getApplication()).songs);
+        storage.storeAudioIndex(-1);
+        Intent playerIntent = new Intent(getApplicationContext(), MediaPlayerService.class);
+        startService(playerIntent);
+        bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
         if (serviceBound) {
             unbindService(serviceConnection);
             //service is active

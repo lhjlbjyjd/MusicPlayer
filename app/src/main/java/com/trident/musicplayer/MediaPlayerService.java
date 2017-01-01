@@ -44,7 +44,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener, AudioManager.OnAudioFocusChangeListener {
 
 
-    private MediaPlayer mediaPlayer;
+    private MediaPlayer mediaPlayer = new MediaPlayer();
     //path to the audio file
     private String mediaFile;
     private int resumePosition;
@@ -71,6 +71,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private boolean ongoingCall = false;
     private PhoneStateListener phoneStateListener;
     private TelephonyManager telephonyManager;
+    private int progress = 0;
 
 
     // Binder given to clients
@@ -94,6 +95,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public void onDestroy() {
         super.onDestroy();
+        new StorageUtil(getApplicationContext()).storeProgress(mediaPlayer.getCurrentPosition());
+        new StorageUtil(getApplicationContext()).storeAudioIndex(audioIndex);
         if (mediaPlayer != null) {
             stopMedia();
             mediaPlayer.release();
@@ -118,6 +121,21 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public IBinder onBind(Intent intent) {
         Log.d("SERVICE", "BINDED");
+        audioList = ( ( ApplicationClass ) getApplication() ).songs;
+        /*
+        progress = new StorageUtil(getApplicationContext()).loadProgress();
+        audioIndex = new StorageUtil(getApplicationContext()).loadAudioIndex();
+        audioList = new StorageUtil(getApplicationContext()).loadAudio();
+        if(progress != 0){
+            try {
+                initMediaSession();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            initMediaPlayer();
+            buildNotification(PlaybackStatus.PLAYING);
+        }
+         */
         return iBinder;
     }
 
@@ -175,7 +193,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     private void initMediaPlayer() {
-        mediaPlayer = new MediaPlayer();
         //Set up MediaPlayer event listeners
         mediaPlayer.setOnCompletionListener(this);
         mediaPlayer.setOnErrorListener(this);
@@ -229,7 +246,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         //Invoked when playback of a media source has completed.
         stopMedia();
         //stop the service
-        stopSelf();
+        //stopSelf();
     }
 
     //Handle errors
@@ -253,6 +270,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public void onPrepared(MediaPlayer mp) {
         //Invoked when the media source is ready for playback.
+        mp.seekTo(progress);
         playMedia();
     }
 
@@ -268,8 +286,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     private boolean removeAudioFocus() {
-        return AudioManager.AUDIOFOCUS_REQUEST_GRANTED ==
-                audioManager.abandonAudioFocus(this);
+        return true;/*AudioManager.AUDIOFOCUS_REQUEST_GRANTED ==
+                audioManager.abandonAudioFocus(this);*/
     }
 
     @Override
@@ -283,20 +301,14 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             if (audioIndex != -1 && audioIndex < audioList.size()) {
                 //index is in a valid range
                 activeAudio = audioList.get(audioIndex);
-            } else {
-                stopSelf();
             }
         } catch (NullPointerException e) {
-            stopSelf();
+            e.printStackTrace();
         }
 
-        //Request audio focus
-        if (requestAudioFocus() == false) {
-            //Could not gain focus
-            stopSelf();
-        }
+        requestAudioFocus();
 
-        if (mediaSessionManager == null) {
+        if (mediaSessionManager == null && audioIndex != -1) {
             try {
                 initMediaSession();
                 initMediaPlayer();
@@ -372,7 +384,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
                 super.onStop();
                 //removeNotification();
                 //Stop the service
-                stopSelf();
+                //stopSelf();
             }
 
             @Override
@@ -541,8 +553,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             if (audioIndex != -1 && audioIndex < audioList.size()) {
                 //index is in a valid range
                 activeAudio = ((ApplicationClass)getApplication()).songs.get(audioIndex);
-            } else {
-                stopSelf();
             }
 
             //A PLAY_NEW_AUDIO action received
@@ -550,8 +560,16 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             stopMedia();
             mediaPlayer.reset();
             initMediaPlayer();
-            updateMetaData();
-            buildNotification(PlaybackStatus.PLAYING);
+            if(audioIndex != -1) {
+                if(mediaSession == null)
+                    try {
+                        initMediaSession();
+                    } catch(RemoteException e){
+                        e.printStackTrace();
+                    }
+                updateMetaData();
+                buildNotification(PlaybackStatus.PLAYING);
+            }
         }
     };
 
