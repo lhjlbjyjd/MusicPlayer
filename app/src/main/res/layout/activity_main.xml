@@ -8,7 +8,8 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:id="@+id/mainLayout">
 
         <android.support.design.widget.AppBarLayout
             android:layout_height="wrap_content"
@@ -48,5 +49,14 @@
             android:id="@+id/textView" />
 
     </RelativeLayout>
+
+    <fragment
+        android:layout_width="wrap_content"
+        android:layout_height="80dp"
+        android:id="@+id/controls"
+        app:layout_anchor="@id/mainLayout"
+        app:layout_anchorGravity="bottom|right|end"
+        android:name="com.trident.musicplayer.Controls"
+        tools:layout="@layout/controls_fragment" />
 
 </android.support.design.widget.CoordinatorLayout>

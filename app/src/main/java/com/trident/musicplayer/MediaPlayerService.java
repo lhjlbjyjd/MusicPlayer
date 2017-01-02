@@ -55,6 +55,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     public static final String ACTION_NEXT = "com.trident.musicplayer.ACTION_NEXT";
     public static final String ACTION_STOP = "com.trident.musicplayer.ACTION_STOP";
 
+    private NotificationCompat.Builder notificationBuilder;
+
     //List of available Audio files
     private ArrayList<Song> audioList;
     private int audioIndex = -1;
@@ -217,6 +219,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private void playMedia() {
         if (!mediaPlayer.isPlaying()) {
             mediaPlayer.start();
+            startForeground(NOTIFICATION_ID, notificationBuilder.build());
         }
     }
 
@@ -224,20 +227,23 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         if (mediaPlayer == null) return;
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
+            stopForeground(false);
         }
     }
 
-    private void pauseMedia() {
+    public void pauseMedia() {
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             resumePosition = mediaPlayer.getCurrentPosition();
+            stopForeground(false);
         }
     }
 
-    private void resumeMedia() {
+    public void resumeMedia() {
         if (!mediaPlayer.isPlaying()) {
             mediaPlayer.seekTo(resumePosition);
             mediaPlayer.start();
+            startForeground(NOTIFICATION_ID, notificationBuilder.build());
         }
     }
 
@@ -406,7 +412,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
                 .build());
     }
 
-    private void skipToNext() {
+    public void skipToNext() {
 
         if (audioIndex == audioList.size() - 1) {
             //if last in playlist
@@ -467,7 +473,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
                 R.mipmap.ic_launcher); //replace with your own image
 
         // Create a new Notification
-        NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
+        notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
                 .setShowWhen(false)
                 // Set the Notification style
                 .setStyle(new NotificationCompat.MediaStyle()
@@ -489,8 +495,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
                 .addAction(notificationAction, "pause", play_pauseAction)
                 .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2));
 
-        //((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, notificationBuilder.build());
-        startForeground(NOTIFICATION_ID, notificationBuilder.build());
+        ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, notificationBuilder.build());
         Log.d("SERVICE", "NOW LIVE");
     }
 
@@ -541,6 +546,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             transportControls.skipToPrevious();
         } else if (actionString.equalsIgnoreCase(ACTION_STOP)) {
             transportControls.stop();
+            stopForeground(false);
         }
     }
 
@@ -630,5 +636,13 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         //register after getting audio focus
         IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         registerReceiver(becomingNoisyReceiver, intentFilter);
+    }
+
+    public boolean isPlaying(){
+        return mediaPlayer.isPlaying();
+    }
+
+    public boolean sessionInitialised(){
+        return mediaSession != null;
     }
 }

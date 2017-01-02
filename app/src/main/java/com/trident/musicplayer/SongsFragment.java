@@ -5,6 +5,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,18 +39,13 @@ public class SongsFragment extends Fragment {
         View inflatedView = inflater.inflate(R.layout.songs_fragment, container, false);
 
         // находим список
-        ListView songsList = (ListView) inflatedView.findViewById(R.id.songsList);
+        RecyclerView songsList = (RecyclerView) inflatedView.findViewById(R.id.songsList);
+        LinearLayoutManager llm = new LinearLayoutManager(getContext());
+        songsList.setLayoutManager(llm);
 
         // создаем адаптер
-        ArrayAdapter<Song> adapter = new SongsAdapter(this.getContext(), songs);
+        SongsAdapter adapter = new SongsAdapter((MainActivity)getActivity(), songs);
         songsList.setAdapter(adapter);
-        songsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-                playSong(position);
-            }
-        });
-
 
         return inflatedView;
     }

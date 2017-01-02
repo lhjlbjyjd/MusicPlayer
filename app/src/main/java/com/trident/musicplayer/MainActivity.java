@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaControllerCompat;
@@ -27,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private TabLayout tabLayout;
     private ViewPager viewPager;
-    private MediaPlayerService player;
+    public MediaPlayerService player;
     public static final String Broadcast_PLAY_NEW_AUDIO = "com.trident.musicplayer.PlayNewAudio";
     MediaPlayerService.LocalBinder binder;
     boolean serviceBound = false;
@@ -93,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
             //Send a broadcast to the service -> PLAY_NEW_AUDIO
             Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
             sendBroadcast(broadcastIntent);
+            ((FloatingActionButton) findViewById(R.id.controls).findViewById(R.id.fab)).setImageResource(R.drawable.ic_pause_white_36dp);
         }
     }
 
@@ -118,6 +120,12 @@ public class MainActivity extends AppCompatActivity {
         Intent playerIntent = new Intent(getApplicationContext(), MediaPlayerService.class);
         startService(playerIntent);
         bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        if(player != null){
+            if(player.isPlaying())
+                ((FloatingActionButton) findViewById(R.id.controls).findViewById(R.id.fab)).setImageResource(R.drawable.ic_pause_white_36dp);
+            else
+                ((FloatingActionButton) findViewById(R.id.controls).findViewById(R.id.fab)).setImageResource(R.drawable.ic_play_arrow_white_36dp);
+        }
     }
 
     @Override
